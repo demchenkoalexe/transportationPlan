@@ -3,4 +3,4 @@
 
 ### Эврестический метод
 Данный метод подразумевает построение допустимого плана абсолютно любым способом, то есть это даже, строго говоря, не метод. Все перевозки расставляются произвольным образом, но в результате должно выполняться следующее условие:
-![screenshot of sample] (https://github.com/demchenkoalexe/transportationPlan/image/formula.png)
+![Formula] (https://github.com/demchenkoalexe/transportationPlan/raw/master/image/formula.png)
