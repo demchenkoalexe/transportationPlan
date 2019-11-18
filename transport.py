@@ -1,68 +1,55 @@
 import math
+import copy
+import sys
+import numpy as np
 
-def heuristicMethod(a, b):
+#Жлобский метод
+def hMethod(a, b, c):
 	# Если задача несбалансированная, то вводим фиктивного участника сети
 	if sum(a) < sum(b):
 		dif = sum(b) - sum(a)
 		a.append(dif)
+		# Добавим тарифы для фиктивного поставщика
+		c.append([0] * len(b))
 	elif sum(b) < sum(a):
 		dif = sum(a) - sum(b)
 		b.append(dif)
+		# Добавим тарифы для фиктивного потребителя
+		for i in c:
+			i.append(0)		
 
-	route = [[int(0) for j in range(len(b))] for i in range(len(a))]
+	route = [[None for j in range(len(b))] for i in range(len(a))]
 
-	# Для a
-	i = 0
-	ai = a[i] 
-	# Для b
-	j = 0
-	bj = b[j]
-	# Превращаем каждое из a и b в 0, только затем перемещаемся 
-	# к следующему поставщику или потребителю и так до окончания
-	# транспортного маршрута. 
-	while (len(a) > i or len(b) > j):
-		if (ai < bj):
-			route[i][j] = ai
-			bj -= ai
-			i += 1
-			ai = a[i]
-		elif (ai > bj):
-			route[i][j] = bj
-			ai -= bj
-			j += 1
-			bj = b[j]
+	route = np.array(route)
+	while(len(np.where(route == None)[1]) > 0):
+		# Ищём самый низкий тариф
+		iMax = 0
+		jMax = 0 
+		min = sys.maxsize
+		for i in range(len(a)):
+			for j in range(len(b)):
+				if (route[i][j] == None and min > c[i][j]):
+					min = c[i][j]
+					iMax = i
+					jMax = j
+
+		if (b[jMax] > a[iMax]):
+			route[iMax][jMax] = a[iMax]
+			dif = a[iMax]
 		else:
-			route[i][j] = ai
-			i += 1
-			if (i != len(a)):
-				ai = a[i]
-			j += 1
-			if (j != len(b)):
-				bj = b[j]
-	return(route)
+			route[iMax][jMax] = b[jMax]
+			dif = b[jMax]
+		a[iMax] -= dif
+		b[jMax] -= dif
+	
+	return route
 
 def print_plan(route, fict = 0, length = 0):
 	print("Допустимый план:")
-	# Если был добавлен фиктивный поставщик
-	if (fict == 1 and length > 0):
-		for i in range(length):
-			for j in range(len(route[i])):
-				if route[i][j] > 0:
-					print("Из пункта A" + str(i + 1) + " в пункт В" + str(j + 1) + " ->", route[i][j])
-		print("Из фиктивного пункта A в пункт В" + str(len(route[0])) + " ->", route[length][len(route) - 1])
-	# Если был добавлен фиктивный потребитель
-	elif (fict == 2 and length > 0):
-		for i in range(len(route)):
-			for j in range(length):
-				if route[i][j] > 0:
-					print("Из пункта A" + str(i + 1) + " в пункт В" + str(j + 1) + " ->", route[i][j])
-		print("Из пункта A" + str(len(route)) + " в фиктивный пункт В ->", route[len(route) - 1][length])
-	# Вывод сбалансированной задачи
-	else:
-		for i in range(len(route)):
-			for j in range(len(route[i])):
-				if route[i][j] > 0:
-					print("Из пункта A" + str(i + 1) + " в пункт В" + str(j + 1) + " ->", route[i][j])
+	for i in range(len(route)):
+		for j in range(len(route[i])):
+			if route[i][j] > 0:
+				print("Из пункта A" + str(i + 1) + " в пункт В" + str(j + 1) + " ->", route[i][j])
 
 def main():
 	fileOrNot = input("Ввод из файла? (Y/n) ")
@@ -72,6 +59,8 @@ def main():
 			lenA = len(a)
 			b = [int(i) for i in file.readline().split()]	# Потребности
 			lenB = len(b)
+			c = [[int(j) for j in file.readline().split()] for i in range(len(a))]	# Тарифы
+			c1 = copy.deepcopy(c)
 	else:
 		print("Ручной ввод.")
 		lenA = int(input("Введите количество поставщиков: "))
@@ -83,15 +72,15 @@ def main():
 		for i in range(lenB):
 			b.append(int(input("Введите объём необходимых поставок в пункт B" + str(i + 1) + ": ")))
 
+		for i in range(lenA):
+			row = []
+			for j in range(lenB):
+				row.append(int(input("Введите тариф поставок из пункта A" + str(i + 1) + " в пункт B" + str(j + 1) + ": ")))
+			c.append(row)
 
-	route = heuristicMethod(a, b)
-
-	if (lenA < len(route)):
-		print_plan(route, 1, lenA)
-	elif (lenB < len(route[0])):
-		print_plan(route, 2, lenB)	
-	else:
-		print_plan(route)	
+	route = hMethod(a, b, c1)
+	
+	print_plan(route)	
 
 if __name__ == '__main__':
     main()
